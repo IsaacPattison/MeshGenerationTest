@@ -12,11 +12,17 @@ public class MeshGenerator : MonoBehaviour
     // Arrays for the vertices and triangles
     Vector3[] vertices;
     int[] triangles;
+    Color[] colors;
 
     // Control the size of the generated mesh
     public int xSize = 1000;
     public int zSize = 1000;
-    public int ySize = 7;
+
+    // Gradient for colouring the mesh
+    public Gradient gradient;
+    
+    float minTerrainHeight;
+    float maxTerrainHeight;
 
     // Generate the mesh
     void Start()
@@ -37,8 +43,20 @@ public class MeshGenerator : MonoBehaviour
             // Use a Perlin Noise to generate random frequency and amplitude
             for (int x = 0; x <= xSize; x++)
             {
-                float y = Mathf.PerlinNoise(x * 0.3f, z * 0.4f) * ySize;
+                float y = Mathf.PerlinNoise(x * 0.2f, z * 0.2f) * 9f;
                 vertices[i] = new Vector3(x, y, z);
+
+                // clamps value
+                if(y > maxTerrainHeight)
+                {
+                    maxTerrainHeight = y;
+                }
+
+                if (y < minTerrainHeight)
+                {
+                    minTerrainHeight = y;
+                }
+
                 i++;
             }
         }
@@ -67,6 +85,21 @@ public class MeshGenerator : MonoBehaviour
             //stops an extra triangle being produced when it changes rows
             vert++;
         }
+
+        //Creates a colour based on the vertices height
+        colors = new Color[vertices.Length];
+
+        for (int i = 0, z = 0; z <= zSize; z++)
+        {
+            
+            for (int x = 0; x <= xSize; x++)
+            {
+                float height = Mathf.InverseLerp(minTerrainHeight, maxTerrainHeight, vertices[i].y);
+                colors[i] = gradient.Evaluate(height);
+                i++;
+            }
+        }
+
     }
 
     // Render the mesh and recalculate the normals 
@@ -76,6 +109,7 @@ public class MeshGenerator : MonoBehaviour
 
         mesh.vertices = vertices;
         mesh.triangles = triangles;
+        mesh.colors = colors;
 
         mesh.RecalculateNormals();
     }
